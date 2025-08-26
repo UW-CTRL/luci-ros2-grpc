@@ -29,6 +29,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 # Find ROS2 cmake macros
 find_package(ament_cmake REQUIRED)
+find_package(luci_messages REQUIRED)
 
 # Add subdirs for libraries and executables
 add_subdirectory(third_party/tclap)
