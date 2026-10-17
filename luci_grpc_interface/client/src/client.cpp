@@ -246,6 +246,9 @@ void ClientGuide::removeInputSource(InputSource source) const
     sensors::InputSourceRequest request;
     Response response;
 
+    // Called on shutdown, which an unreachable chair mustn't hold up
+    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
+
     request.set_source(convertInputSourceToProto(source));
 
     if (Status status = stub_->RemoveInputSource(&context, request, &response); status.ok())

@@ -24,6 +24,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "tclap/CmdLine.h"
 
+#include <cstdlib>
 #include <iostream>
 
 /// Time (seconds) to timeout on attempt to connect to grpc
@@ -178,9 +179,19 @@ int main(int argc, char* argv[])
 
     executor.spin();
 
+    // Release the chair before exiting. The chair keeps the remote input sources this node
+    // registered after it's gone, and while one is registered it waits for remote commands and
+    // ignores its own joystick, so a node that exits without removing them leaves the chair
+    // undrivable until it's power cycled.
+    RCLCPP_INFO(rclcpp::get_logger("luci_interface"), "Releasing remote input sources");
+    luciInterface->removeInputSource(InputSource::SharedRemote);
+    luciInterface->removeInputSource(InputSource::AutonomousRemote);
+    rclcpp::shutdown();
+
     // TODO: clp The grpc threads on the client dont exit properly because they are always in a
     // loop, I need to find a way to kill them on destructor and not just wait for a join. Will add
     // atomic bool flag to terminate
-    rclcpp::shutdown();
-    return 0;
+    // Until then, returning would block forever in ~ClientGuide joining them (and the Interface's
+    // converter threads never return either), so exit without running destructors.
+    std::_Exit(0);
 }
